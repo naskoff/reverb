@@ -4,7 +4,7 @@ WORKDIR /var/www/html
 
 USER root
 
-RUN install-php-extensions bcmath intl opcache
+RUN install-php-extensions intl
 
 USER www-data
 
@@ -14,6 +14,8 @@ USER root
 
 ARG UID
 ARG GID
+
+COPY --chmod=0755 php-entrypoint.sh /etc/entrypoint.d/20-php-entrypoint.sh
 
 RUN docker-php-serversideup-set-id www-data $UID:$GID && \
     docker-php-serversideup-set-file-permissions --owner $UID:$GID --service nginx && \

@@ -18,6 +18,8 @@ services:
       service: php
     stop_signal: SIGTERM
     command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
+    depends_on:
+      - php
     healthcheck:
       test: ["CMD", "healthcheck-queue"]
       start_period: 10s
@@ -34,6 +36,8 @@ services:
       - "traefik.http.routers.reverb.rule=Host(`ws.reverb.test`)"
       - "traefik.http.services.reverb.loadbalancer.server.port=8080"
       - "traefik.http.services.reverb.loadbalancer.server.scheme=http"
+    depends_on:
+      - php
     healthcheck:
       test: ["CMD", "healthcheck-reverb"]
       start_period: 10s
@@ -43,6 +47,8 @@ services:
       service: php
     stop_signal: SIGTERM
     command: [ "php", "/var/www/html/artisan", "horizon" ]
+    depends_on:
+      - php
     healthcheck:
       test: [ "CMD", "healthcheck-horizon" ]
       start_period: 10s
@@ -52,6 +58,8 @@ services:
       service: php
     stop_signal: SIGTERM
     command: ["php", "/var/www/html/artisan", "schedule:work"]
+    depends_on:
+      - php
     healthcheck:
       test: ["CMD", "healthcheck-schedule"]
       start_period: 10s
@@ -60,8 +68,6 @@ services:
     image: node:22.13.1-alpine
     command: ["yarn", "dev"]
     working_dir: /usr/src/app
-    ports:
-      - "5173:5173"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.vite.tls=true"
