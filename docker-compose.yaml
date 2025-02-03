@@ -1,0 +1,111 @@
+services:
+  php:
+    extends:
+      file: services/php.service.yaml
+      service: php
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.php.tls=true"
+      - "traefik.http.routers.php.entrypoints=https"
+      - "traefik.http.routers.php.rule=Host(`reverb.test`)"
+      - "traefik.http.services.php.loadbalancer.server.port=8080"
+      - "traefik.http.services.php.loadbalancer.server.scheme=http"
+    environment:
+      AUTORUN_ENABLED: true
+  queue:
+    extends:
+      file: services/php.service.yaml
+      service: php
+    stop_signal: SIGTERM
+    command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
+    healthcheck:
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s
+  reverb:
+    extends:
+      file: services/php.service.yaml
+      service: php
+    stop_signal: SIGTERM
+    command: ["php", "/var/www/html/artisan", "reverb:start", "--debug"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.reverb.tls=true"
+      - "traefik.http.routers.reverb.entrypoints=https"
+      - "traefik.http.routers.reverb.rule=Host(`ws.reverb.test`)"
+      - "traefik.http.services.reverb.loadbalancer.server.port=8080"
+      - "traefik.http.services.reverb.loadbalancer.server.scheme=http"
+    healthcheck:
+      test: ["CMD", "healthcheck-reverb"]
+      start_period: 10s
+  horizon:
+    extends:
+      file: services/php.service.yaml
+      service: php
+    stop_signal: SIGTERM
+    command: [ "php", "/var/www/html/artisan", "horizon" ]
+    healthcheck:
+      test: [ "CMD", "healthcheck-horizon" ]
+      start_period: 10s
+  scheduler:
+    extends:
+      file: services/php.service.yaml
+      service: php
+    stop_signal: SIGTERM
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      start_period: 10s
+  node:
+    restart: unless-stopped
+    image: node:22.13.1-alpine
+    command: ["yarn", "dev"]
+    working_dir: /usr/src/app
+    ports:
+      - "5173:5173"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vite.tls=true"
+      - "traefik.http.routers.vite.entrypoints=https"
+      - "traefik.http.routers.vite.rule=Host(`cdn.reverb.test`)"
+      - "traefik.http.services.vite.loadbalancer.server.port=5173"
+      - "traefik.http.services.vite.loadbalancer.server.scheme=http"
+    volumes:
+      - ./:/usr/src/app:cached
+  cache:
+    restart: always
+    image: redis:7.2-alpine
+    command: ["redis-server", "--save", "20", "1"]
+    volumes:
+      - cache:/data
+  traefik:
+    restart: always
+    image: traefik:v3.3
+    command:
+      --log.level=DEBUG
+      --api.insecure=false
+      --providers.docker=true
+      --providers.docker.exposedbydefault=false
+      --providers.file.filename=/etc/traefik/options.yaml
+      --providers.file.watch=true
+      --entryPoints.http.address=:80
+      --entrypoints.http.http.redirections.entryPoint.to=https
+      --entrypoints.http.http.redirections.entryPoint.scheme=https
+      --entryPoints.https.address=:443
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.tls=true"
+      - "traefik.http.routers.dashboard.entrypoints=https"
+      - "traefik.http.routers.dashboard.rule=Host(`dashboard.reverb.test`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+    volumes:
+      - ./certs/:/ssl
+      - ./traefik.yaml:/etc/traefik/options.yaml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  cache:
+    driver: local

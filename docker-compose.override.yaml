@@ -1,0 +1,31 @@
+services:
+  php:
+    build:
+      target: development
+    volumes:
+      - ./:/var/www/html
+      - ./certs/:/etc/ssl/private
+  queue:
+    build:
+      target: development
+    volumes:
+      - ./:/var/www/html
+      - ./certs/:/etc/ssl/private
+  reverb:
+    build:
+      target: development
+    volumes:
+      - ./:/var/www/html
+      - ./certs/:/etc/ssl/private
+  horizon:
+    build:
+      target: development
+    volumes:
+      - ./:/var/www/html
+      - ./certs/:/etc/ssl/private
+  scheduler:
+    build:
+      target: development
+    volumes:
+      - ./:/var/www/html
+      - ./certs/:/etc/ssl/private
