@@ -2,15 +2,16 @@
 
 namespace Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
+use App\Models\User;
 
-class UserTest extends TestCase
-{
-    /**
-     * A basic unit test example.
-     */
-    public function test_example(): void
-    {
-        $this->assertTrue(true);
-    }
-}
+describe('test user model', function () {
+    it('test create model', function () {
+        User::factory()->create([
+            'email' => 'test@test.com',
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'test@test.com',
+        ]);
+    });
+});
