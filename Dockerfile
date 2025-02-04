@@ -1,5 +1,7 @@
 FROM serversideup/php:8.4-fpm-nginx-alpine AS base
 
+ENV COMPOSER_HOME /tmp
+
 WORKDIR /var/www/html
 
 USER root
@@ -15,11 +17,11 @@ USER root
 ARG UID
 ARG GID
 
-COPY --chmod=0755 php-entrypoint.sh /etc/entrypoint.d/20-php-entrypoint.sh
+COPY --chmod=0755 entrypoint-php.sh /etc/entrypoint.d/20-php-entrypoint.sh
 
 RUN docker-php-serversideup-set-id www-data $UID:$GID && \
     docker-php-serversideup-set-file-permissions --owner $UID:$GID --service nginx && \
-    install-php-extensions pcov
+    install-php-extensions pcov xdebug
 
 USER www-data
 

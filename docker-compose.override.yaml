@@ -29,3 +29,25 @@ services:
     volumes:
       - ./:/var/www/html
       - ./certs/:/etc/ssl/private
+  db:
+    volumes:
+      - ./entrypoint-db.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh
+  mailpit:
+    image: 'axllent/mailpit:latest'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mailpit.tls=true"
+      - "traefik.http.routers.mailpit.entrypoints=https"
+      - "traefik.http.routers.mailpit.rule=Host(`mail.reverb.test`)"
+      - "traefik.http.services.mailpit.loadbalancer.server.port=8025"
+      - "traefik.http.services.mailpit.loadbalancer.server.scheme=http"
+    volumes:
+      - mail-data:/data
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  mail-data:
+    driver: local

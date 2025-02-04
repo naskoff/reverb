@@ -17,18 +17,18 @@ services:
       file: services/php.service.yaml
       service: php
     stop_signal: SIGTERM
-    command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
+    command: [ "php", "/var/www/html/artisan", "queue:work", "--tries=3" ]
     depends_on:
       - php
     healthcheck:
-      test: ["CMD", "healthcheck-queue"]
+      test: [ "CMD", "healthcheck-queue" ]
       start_period: 10s
   reverb:
     extends:
       file: services/php.service.yaml
       service: php
     stop_signal: SIGTERM
-    command: ["php", "/var/www/html/artisan", "reverb:start", "--debug"]
+    command: [ "php", "/var/www/html/artisan", "reverb:start", "--debug" ]
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.reverb.tls=true"
@@ -39,7 +39,7 @@ services:
     depends_on:
       - php
     healthcheck:
-      test: ["CMD", "healthcheck-reverb"]
+      test: [ "CMD", "healthcheck-reverb" ]
       start_period: 10s
   horizon:
     extends:
@@ -57,16 +57,32 @@ services:
       file: services/php.service.yaml
       service: php
     stop_signal: SIGTERM
-    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    command: [ "php", "/var/www/html/artisan", "schedule:work" ]
     depends_on:
       - php
     healthcheck:
-      test: ["CMD", "healthcheck-schedule"]
+      test: [ "CMD", "healthcheck-schedule" ]
       start_period: 10s
+  db:
+    restart: unless-stopped
+    image: mysql:9.2.0
+    ports:
+      - "23306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+    healthcheck:
+      test: [ "CMD", "mysqladmin",  "ping", "-p${DB_PASSWORD}" ]
+      retries: 3
+      timeout: 5s
   node:
     restart: unless-stopped
     image: node:22.13.1-alpine
-    command: ["yarn", "dev"]
+    command: [ "yarn", "dev" ]
     working_dir: /usr/src/app
     labels:
       - "traefik.enable=true"
@@ -80,9 +96,9 @@ services:
   cache:
     restart: always
     image: redis:7.2-alpine
-    command: ["redis-server", "--save", "20", "1"]
+    command: [ "redis-server", "--save", "20", "1" ]
     volumes:
-      - cache:/data
+      - cache-data:/data
   traefik:
     restart: always
     image: traefik:v3.3
@@ -113,5 +129,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
-  cache:
+  db-data:
+    driver: local
+  cache-data:
     driver: local
