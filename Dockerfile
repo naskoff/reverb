@@ -2,11 +2,12 @@ FROM serversideup/php:8.4-fpm-nginx-alpine AS base
 
 ENV COMPOSER_HOME /tmp
 
-WORKDIR /var/www/html
-
 USER root
 
-RUN install-php-extensions intl
+WORKDIR /var/www/html
+
+RUN apk add --no-cache git curl make && \
+    install-php-extensions intl uv
 
 USER www-data
 
