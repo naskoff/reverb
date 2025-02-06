@@ -113,6 +113,7 @@ services:
       --entrypoints.http.http.redirections.entryPoint.to=https
       --entrypoints.http.http.redirections.entryPoint.scheme=https
       --entryPoints.https.address=:443
+      --entryPoints.http.forwardedHeaders.trustedIPs=127.0.0.1/32,192.168.1.7
     ports:
       - "80:80"
       - "443:443"
